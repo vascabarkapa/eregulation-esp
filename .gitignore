@@ -1,3 +1,32 @@
+# Arduino specific files and directories
+/build/
+*.hex
+*.elf
+*.bin
+*.eep
+*.map
+*.lst
+
+# Libraries
+/libraries/
+
+# Arduino IDE files
+*.tmp
+*.rpt
+*.properties
+*.log
+*.swp
+*.DS_Store
+
+# User-specific settings
+/.vscode/
+/.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Other
+/.clang_complete
+
 # Prerequisites
 *.d
 
