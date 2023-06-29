@@ -25,7 +25,7 @@ const char* mqtt_password = "eRegulation123!";
 const int mqtt_port = 8883;
 
 uint8_t heating_state = 0, cooling_state = 0, flag_temp = 0, flag_hum = 0;
-float current_temp = 12, current_hum = 0;
+int current_temp = 12, current_hum = 0;
 int min_temp = 16, max_temp = 24, min_hum = 60, max_hum = 80;
 unsigned long elapsedTime = 0;
 
@@ -111,12 +111,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
     min_hum = ((msg[2] - '0') * 10) + (msg[3] - '0');
     max_hum = ((msg[5] - '0') * 10) + (msg[6] - '0');
   } else if (incommingMessage.compareTo("welcome") == 0) {
-    char* welcomeMessage;
-    sprintf(message, "t-%d-%d-%d-%d-h-%d-%d-%d-%d", current_temp, heating_state, min_temp, max_temp, current_hum, cooling_state, min_hum, max_hum);
+    char welcomeMessage[] = "m";
+    sprintf(welcomeMessage, "t-%d-%d-%d-%d-h-%d-%d-%d-%d", current_temp, heating_state, min_temp, max_temp, current_hum, cooling_state, min_hum, max_hum);
     publishMessage("eregulation", welcomeMessage, true);
   } else if (incommingMessage.compareTo("ping") == 0) {
-    char* pingMessage;
-    sprintf(message, "t-%d-h-%d", current_temp, current_hum);
+    char pingMessage[] = "m";
+    sprintf(pingMessage, "t-%d-h-%d", current_temp, current_hum);
     publishMessage("eregulation", pingMessage, true);
   }
 }
