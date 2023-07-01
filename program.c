@@ -3,10 +3,10 @@
 #include <WiFiClientSecure.h>
 #include <DHT.h>
 
-#define dhtPin D0
+#define dhtPin 0
 #define dhtType 11
-#define relayPinH D1
-#define relayPinC D2
+#define relayPinH 4
+#define relayPinC 5
 
 const char* ssid = "LAB_2.32";
 const char* password = "LAB_2.32";
@@ -25,9 +25,9 @@ const char* mqtt_password = "eRegulation123!";
 const int mqtt_port = 8883;
 
 uint8_t heating_state = 0, cooling_state = 0, flag_temp = 0, flag_hum = 0;
-int current_temp = 12, current_hum = 0;
-int min_temp = 16, max_temp = 24, min_hum = 60, max_hum = 80;
-unsigned long elapsedTime = 0;
+float current_temp = 15.0, current_hum = 45.0;
+float min_temp = 16.0, max_temp = 24.0, min_hum = 60.0, max_hum = 80.0;
+unsigned long elapsed_time = 0;
 
 /****** root certificate *********/
 static const char* root_ca PROGMEM = R"EOF(
@@ -74,50 +74,55 @@ void reconnect() {
     if (mqttClient.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
       Serial.println("connected");
 
-      mqttClient.subscribe("eregulation");
+      mqttClient.subscribe("eregulation/arduino");
+      mqttClient.subscribe("eregulation/android");
     } else {
       Serial.print("failed, rc=");
       Serial.print(mqttClient.state());
       Serial.println(" try again in 5 seconds");
-
+      
       delay(5000);
     }
   }
 }
 
 void publishMessage(const char* topic, String payload, boolean retained) {
-  if (mqttClient.publish(topic, payload.c_str(), true))
-    Serial.println("Message publised [" + String(topic) + "]: " + payload);
+  if (mqttClient.publish(topic, payload.c_str(), true)) {
+  //    if you need to print message on serial monitor
+  //    Serial.println("Message publised [" + String(topic) + "]: " + payload);
+  }
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String incommingMessage = "";
-  for (int i = 0; i < length; i++) incommingMessage += (char)payload[i]; 
+  for (int i = 0; i < length; i++) incommingMessage += (char)payload[i];
 
-  if (incommingMessage.compareTo("t-on") == 0) {
-    flag_temp = 1;
-  } else if (incommingMessage.compareTo("t-off") == 0) {
-    flag_temp = 0;
-  } else if (incommingMessage.compareTo("h-on") == 0) {
-    flag_hum = 1;
-  } else if (incommingMessage.compareTo("h-off") == 0) {
-    flag_hum = 0;
-  } else if (incommingMessage.startsWith("t")) {
-    const char* msg = incommingMessage.c_str();
-    min_temp = ((msg[2] - '0') * 10) + (msg[3] - '0');
-    max_temp = ((msg[5] - '0') * 10) + (msg[6] - '0');
-  } else if (incommingMessage.startsWith("h")) {
-    const char* msg = incommingMessage.c_str();
-    min_hum = ((msg[2] - '0') * 10) + (msg[3] - '0');
-    max_hum = ((msg[5] - '0') * 10) + (msg[6] - '0');
-  } else if (incommingMessage.compareTo("welcome") == 0) {
-    char welcomeMessage[] = "m";
-    sprintf(welcomeMessage, "t-%d-%d-%d-%d-h-%d-%d-%d-%d", current_temp, heating_state, min_temp, max_temp, current_hum, cooling_state, min_hum, max_hum);
-    publishMessage("eregulation", welcomeMessage, true);
-  } else if (incommingMessage.compareTo("ping") == 0) {
-    char pingMessage[] = "m";
-    sprintf(pingMessage, "t-%d-h-%d", current_temp, current_hum);
-    publishMessage("eregulation", pingMessage, true);
+  if(strcmp(topic,"eregulation/arduino") == 0) {
+    if (incommingMessage.compareTo("t-on") == 0) {
+      flag_temp = 1;
+    } else if (incommingMessage.compareTo("t-off") == 0) {
+      flag_temp = 0;
+    } else if (incommingMessage.compareTo("h-on") == 0) {
+      flag_hum = 1;
+    } else if (incommingMessage.compareTo("h-off") == 0) {
+      flag_hum = 0;
+    } else if (incommingMessage.startsWith("t")) {
+      const char* msg = incommingMessage.c_str();
+      min_temp = ((msg[2] - '0') * 10) + (msg[3] - '0');
+      max_temp = ((msg[5] - '0') * 10) + (msg[6] - '0');
+    } else if (incommingMessage.startsWith("h")) {
+      const char* msg = incommingMessage.c_str();
+      min_hum = ((msg[2] - '0') * 10) + (msg[3] - '0');
+      max_hum = ((msg[5] - '0') * 10) + (msg[6] - '0');
+    } else if (incommingMessage.compareTo("welcome") == 0) {
+      char welcome_message[] = "m";
+      sprintf(welcome_message, "t-%d-%d-%d-%d-h-%d-%d-%d-%d", (int)current_temp, flag_temp, (int)min_temp, (int)max_temp, (int)current_hum, flag_hum, (int)min_hum, (int)max_hum);
+      publishMessage("eregulation/android", welcome_message, true);
+    } else if (incommingMessage.compareTo("ping") == 0) {
+      char ping_message[] = "m";
+      sprintf(ping_message, "t-%d-h-%d", (int)current_temp, (int)current_hum);
+      publishMessage("eregulation/android", ping_message, true);
+    }
   }
 }
 
@@ -156,7 +161,7 @@ void setup() {
 #ifdef ESP8266
   wifiClient.setInsecure();
 #else
-  wifiClient.setCACert(root_ca);
+  wifiClient.setCACert(root_ca);  // enable this line and the the "certificate" code for secure connection
 #endif
 
   mqttClient.setServer(mqtt_server, mqtt_port);
@@ -169,14 +174,17 @@ void setup() {
 }
 
 void loop() {
-  if (millis() - elapsedTime > 60000) { 
-    elapsedTime = millis();
+  if (!mqttClient.connected()) reconnect();
+  mqttClient.loop();
 
-    ReadDHTValues();
+  ReadDHTValues();
 
-    char* message;
-    sprintf(message, "t-%d-h-%d", current_temp, current_hum);
-    publishMessage("eregulation", message, true);
+  if (millis() - elapsed_time > 60000) {
+    elapsed_time = millis();
+
+    char message[] = "m";
+    sprintf(message, "t-%d-h-%d", (int)current_temp, (int)current_hum);
+    publishMessage("eregulation/android", message, true);
   }
 
   if (flag_temp) {
@@ -190,12 +198,11 @@ void loop() {
   }
 
   if (flag_hum) {
-    if (current_hum < min_hum) {
+    if (current_hum > max_hum) {
       cooling_state = 1;
-    } else if (current_hum > max_hum) {
+    } else if (current_hum < min_hum) {
       cooling_state = 0;
     }
-
   } else {
     cooling_state = 0;
   }
