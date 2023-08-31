@@ -189,22 +189,22 @@ void loop() {
 
   if (flag_temp) {
     if (current_temp < min_temp) {
-      heating_state = 1;
-    } else if (current_temp > max_temp) {
       heating_state = 0;
+    } else if (current_temp > max_temp) {
+      heating_state = 1;
     }
   } else {
-    heating_state = 0;
+    heating_state = 1;
   }
 
   if (flag_hum) {
     if (current_hum > max_hum) {
-      cooling_state = 1;
-    } else if (current_hum < min_hum) {
       cooling_state = 0;
+    } else if (current_hum < min_hum) {
+      cooling_state = 1;
     }
   } else {
-    cooling_state = 0;
+    cooling_state = 1;
   }
 
   RelayControl(heating_state, cooling_state);
