@@ -1,6 +1,6 @@
 # eRegulation ESP Microcontroller
 #### NOTE: This is a test version. Project under development. 
-The application is an integral part of the subject "Designing systems with an Embedded computer - Embedded Systems" at the Master's studies of the Faculty of Electrical Engineering, University of East Sarajevo. The project also includes a mobile application: [eRegulation Mobile App](https://github.com/vascabarkapa/eregulation-mobile).
+The application is an integral part of the subject "Designing systems with an Embedded computer - Embedded Systems" at the Master's studies of the Faculty of Electrical Engineering, University of East Sarajevo. The project also includes a mobile application [eRegulation Mobile App](https://github.com/vascabarkapa/eregulation-mobile) and web application [eRegulation Mobile Web](https://github.com/vascabarkapa/eregulation-web).
 
 This project uses an ESP8266 microcontroller to measure temperature and humidity using a DHT11 sensor and control heating and cooling systems based on predefined thresholds. It communicates with a MQTT broker to receive control commands and send status updates.
 
