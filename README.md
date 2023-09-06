@@ -41,7 +41,7 @@ Before you begin, make sure you have the following components and requirements i
    - To turn on humidity control, publish a message to `eregulation/arduino` with the content `h-on`.
    - To turn off humidity control, publish a message to `eregulation/arduino` with the content `h-off`.
    - To set custom humidity thresholds, publish a message to `eregulation/arduino` in the format `h-XX-YY`, where `XX` is the minimum humidity and `YY` is the maximum humidity.
-   - To receive the current system status, send a message with the content `welcome` to `eregulation/arduino`.
+   - To receive the current system status, send a message with the content `ping` to `eregulation/arduino`.
 
 ## Acknowledgments
 
