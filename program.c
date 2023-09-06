@@ -8,8 +8,8 @@
 #define relayPinH 4
 #define relayPinC 5
 
-const char* ssid = "LAB_2.32";
-const char* password = "LAB_2.32";
+const char* ssid = "GalaxyA513487";
+const char* password = "glzn2115";
 
 WiFiClientSecure wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -24,9 +24,9 @@ const char* mqtt_username = "eregulation";
 const char* mqtt_password = "eRegulation123!";
 const int mqtt_port = 8883;
 
-uint8_t heating_state = 0, cooling_state = 0, flag_temp = 0, flag_hum = 0;
-float current_temp = 15.0, current_hum = 45.0;
-float min_temp = 16.0, max_temp = 24.0, min_hum = 60.0, max_hum = 80.0;
+uint8_t heating_state = 1, cooling_state = 1, flag_temp = 0, flag_hum = 0;
+float current_temp, current_hum;
+float min_temp = 18.0, max_temp = 24.0, min_hum = 40.0, max_hum = 60.0;
 unsigned long elapsed_time = 0;
 
 /****** root certificate *********/
