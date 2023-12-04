@@ -49,3 +49,7 @@ Before you begin, make sure you have the following components and requirements i
 - [ESP8266WiFi Library](https://github.com/esp8266/Arduino)
 - [PubSubClient Library](https://github.com/knolleary/pubsubclient)
 - [DHT Library](https://github.com/adafruit/DHT-sensor-library)
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). You can find more details in the [LICENSE](LICENSE) file.
