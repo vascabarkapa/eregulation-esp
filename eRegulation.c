@@ -4,9 +4,11 @@
 #include <DHT.h>
 
 #define dhtPin 0
+#define ldrPin A0
 #define dhtType 11
 #define relayPinH 4
 #define relayPinC 5
+#define relayPinL 16
 
 const char* ssid = "GalaxyA513487";
 const char* password = "glzn2115";
@@ -24,10 +26,17 @@ const char* mqtt_username = "eregulation";
 const char* mqtt_password = "eRegulation123!";
 const int mqtt_port = 8883;
 
-uint8_t heating_state = 1, cooling_state = 1, flag_temp = 0, flag_hum = 0;
+enum light { Off,
+             On,
+             Auto } flag_light;
+
+uint8_t heating_state = 1, cooling_state = 1, light_state = 1, flag_temp = 0, flag_hum = 0;
 float current_temp, current_hum;
 float min_temp = 18.0, max_temp = 24.0, min_hum = 40.0, max_hum = 60.0;
 unsigned long elapsed_time = 0;
+int value;
+float voltage, R2;
+float refVoltage = 3.3, R1 = 10000.0, refR = 5000.0;
 
 /****** root certificate *********/
 static const char* root_ca PROGMEM = R"EOF(
@@ -67,7 +76,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 void reconnect() {
   while (!mqttClient.connected()) {
     Serial.print("Attempting MQTT connection...");
-    
+
     String clientId = "ESP8266Client-";
     clientId += String(random(0xffff), HEX);
 
@@ -80,7 +89,7 @@ void reconnect() {
       Serial.print("failed, rc=");
       Serial.print(mqttClient.state());
       Serial.println(" try again in 5 seconds");
-      
+
       delay(5000);
     }
   }
@@ -88,8 +97,8 @@ void reconnect() {
 
 void publishMessage(const char* topic, String payload, boolean retained) {
   if (mqttClient.publish(topic, payload.c_str(), true)) {
-  //    if you need to print message on serial monitor
-  //    Serial.println("Message publised [" + String(topic) + "]: " + payload);
+    //    if you need to print message on serial monitor
+    //    Serial.println("Message publised [" + String(topic) + "]: " + payload);
   }
 }
 
@@ -97,7 +106,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   String incommingMessage = "";
   for (int i = 0; i < length; i++) incommingMessage += (char)payload[i];
 
-  if(strcmp(topic,"eregulation/arduino") == 0) {
+  if (strcmp(topic, "eregulation/arduino") == 0) {
     if (incommingMessage.compareTo("t-on") == 0) {
       flag_temp = 1;
     } else if (incommingMessage.compareTo("t-off") == 0) {
@@ -114,13 +123,21 @@ void callback(char* topic, byte* payload, unsigned int length) {
       const char* msg = incommingMessage.c_str();
       min_hum = ((msg[2] - '0') * 10) + (msg[3] - '0');
       max_hum = ((msg[5] - '0') * 10) + (msg[6] - '0');
+    } else if (incommingMessage.startsWith("l")) {
+      if (incommingMessage.compareTo("l-on") == 0) {
+        flag_light = On;
+      } else if (incommingMessage.compareTo("l-off") == 0) {
+        flag_light = Off;
+      } else if (incommingMessage.compareTo("l-auto") == 0) {
+        flag_light = Auto;
+      }
     } else if (incommingMessage.compareTo("welcome") == 0) {
       char welcome_message[] = "m";
-      sprintf(welcome_message, "t-%d-%d-%d-%d-h-%d-%d-%d-%d", (int)current_temp, flag_temp, (int)min_temp, (int)max_temp, (int)current_hum, flag_hum, (int)min_hum, (int)max_hum);
+      sprintf(welcome_message, "t-%d-%d-%d-%d-h-%d-%d-%d-%d-l-%d", (int)current_temp, flag_temp, (int)min_temp, (int)max_temp, (int)current_hum, flag_hum, (int)min_hum, (int)max_hum), flag_light;
       publishMessage("eregulation/android", welcome_message, true);
     } else if (incommingMessage.compareTo("ping") == 0) {
       char ping_message[] = "m";
-      sprintf(ping_message, "t-%d-h-%d", (int)current_temp, (int)current_hum);
+      sprintf(ping_message, "t-%d-h-%d-l-%d", (int)current_temp, (int)current_hum, !light_state);
       publishMessage("eregulation/android", ping_message, true);
     }
   }
@@ -131,9 +148,16 @@ void ReadDHTValues() {
   current_hum = dht11.readHumidity();
 }
 
-void RelayControl(uint8_t hState, uint8_t cState) {
+void CheckLight() {
+  value = analogRead(ldrPin);
+  voltage = value * 3.3 / 1023.0;
+  R2 = R1 * voltage / (refVoltage - voltage);
+}
+
+void RelayControl(uint8_t hState, uint8_t cState, uint8_t lState) {
   digitalWrite(relayPinH, hState);
   digitalWrite(relayPinC, cState);
+  digitalWrite(relayPinL, lState);
 }
 
 void setup() {
@@ -171,6 +195,7 @@ void setup() {
 
   pinMode(relayPinH, OUTPUT);
   pinMode(relayPinC, OUTPUT);
+  pinMode(relayPinL, OUTPUT);
 }
 
 void loop() {
@@ -183,7 +208,7 @@ void loop() {
     elapsed_time = millis();
 
     char message[] = "m";
-    sprintf(message, "t-%d-h-%d", (int)current_temp, (int)current_hum);
+    sprintf(message, "t-%d-h-%d-l-%d", (int)current_temp, (int)current_hum, !light_state);
     publishMessage("eregulation/android", message, true);
   }
 
@@ -207,5 +232,19 @@ void loop() {
     cooling_state = 1;
   }
 
-  RelayControl(heating_state, cooling_state);
+  if (flag_light == Auto) {
+    CheckLight();
+
+    if (R2 > refR) {
+      light_state = LOW;
+    } else {
+      light_state = HIGH;
+    }
+  } else if (flag_light == On) {
+    light_state = LOW;
+  } else if (flag_light == Off) {
+    light_state = HIGH;
+  }
+
+  RelayControl(heating_state, cooling_state, light_state);
 }
