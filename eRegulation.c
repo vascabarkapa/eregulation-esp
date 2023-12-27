@@ -210,8 +210,9 @@ void loop() {
     elapsed_time = millis();
 
     char message[] = "m";
-    sprintf(message, "t-%d-h-%d-l-%d", (int)current_temp, (int)current_hum, !light_state);
+    sprintf(ping_message, "t-%.2f-h-%.2f-l-%d", current_temp, current_hum, !light_state);
     publishMessage("eregulation/android", message, true);
+    publishMessage("eregulation/web", message, true);
   }
 
   if (flag_temp) {
