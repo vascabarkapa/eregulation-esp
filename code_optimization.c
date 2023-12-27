@@ -110,37 +110,45 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 
   if (strcmp(topic, "eregulation/arduino") == 0 || strcmp(topic, "eregulation/web") == 0) {
-    if (incommingMessage.compareTo("t-on") == 0) {
-      flag_temp = 1;
-    } else if (incommingMessage.compareTo("t-off") == 0) {
-      flag_temp = 0;
-    } else if (incommingMessage.compareTo("h-on") == 0) {
-      flag_hum = 1;
-    } else if (incommingMessage.compareTo("h-off") == 0) {
-      flag_hum = 0;
-    } else if (incommingMessage.startsWith("t")) {
-      const char* msg = incommingMessage.c_str();
-      min_temp = ((msg[2] - '0') * 10) + (msg[3] - '0');
-      max_temp = ((msg[5] - '0') * 10) + (msg[6] - '0');
-    } else if (incommingMessage.startsWith("h")) {
-      const char* msg = incommingMessage.c_str();
-      min_hum = ((msg[2] - '0') * 10) + (msg[3] - '0');
-      max_hum = ((msg[5] - '0') * 10) + (msg[6] - '0');
-    } else if (incommingMessage.compareTo("l-on") == 0) {
-      flag_light = On;
-    } else if (incommingMessage.compareTo("l-off") == 0) {
-      flag_light = Off;
-    } else if (incommingMessage.compareTo("l-auto") == 0) {
-      flag_light = Auto;
-    } else if (incommingMessage.compareTo("welcome") == 0) {
-      char welcome_message[] = "m";
-      sprintf(welcome_message, "t-%.2f-%d-%d-%d-h-%.2f-%d-%d-%d-l-%d", current_temp, flag_temp, (int)min_temp, (int)max_temp, current_hum, flag_hum, (int)min_hum, (int)max_hum, flag_light);
-      publishMessage("eregulation/android", welcome_message, true);
-    } else if (incommingMessage.compareTo("ping") == 0) {
-      char ping_message[] = "m";
-      sprintf(ping_message, "t-%.2f-h-%.2f-l-%d", current_temp, current_hum, !light_state);
-      publishMessage("eregulation/android", ping_message, true);
-      publishMessage("eregulation/web", ping_message, true);
+    const char* msg = incommingMessage.c_str();
+
+    switch (incommingMessage[0]) {
+      case 't':
+        min_temp = ((msg[2] - '0') * 10) + (msg[3] - '0');
+        max_temp = ((msg[5] - '0') * 10) + (msg[6] - '0');
+        break;
+
+      case 'h':
+        min_hum = ((msg[2] - '0') * 10) + (msg[3] - '0');
+        max_hum = ((msg[5] - '0') * 10) + (msg[6] - '0');
+        break;
+
+      case 'l':
+        if (incommingMessage.compareTo("l-on") == 0) {
+          flag_light = On;
+        } else if (incommingMessage.compareTo("l-off") == 0) {
+          flag_light = Off;
+        } else if (incommingMessage.compareTo("l-auto") == 0) {
+          flag_light = Auto;
+        }
+        break;
+
+      case 'w':
+        if (incommingMessage.compareTo("welcome") == 0) {
+          char welcome_message[] = "m";
+          sprintf(welcome_message, "t-%.2f-%d-%d-%d-h-%.2f-%d-%d-%d-l-%d", current_temp, flag_temp, (int)min_temp, (int)max_temp, current_hum, flag_hum, (int)min_hum, (int)max_hum, flag_light);
+          publishMessage("eregulation/android", welcome_message, true);
+        }
+        break;
+
+      case 'p':
+        if (incommingMessage.compareTo("ping") == 0) {
+          char ping_message[] = "m";
+          sprintf(ping_message, "t-%.2f-h-%.2f-l-%d", current_temp, current_hum, !light_state);
+          publishMessage("eregulation/android", ping_message, true);
+          publishMessage("eregulation/web", ping_message, true);
+        }
+        break;
     }
   }
 }
