@@ -97,7 +97,7 @@ void reconnect() {
 
 void publishMessage(const char* topic, String payload, boolean retained) {
   if (mqttClient.publish(topic, payload.c_str(), true)) {
-    Serial.println("Message publised [" + String(topic) + "]: " + payload);
+    Serial.println("Message published [" + String(topic) + "]: " + payload);
   }
 }
 
@@ -106,7 +106,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   for (int i = 0; i < length; i++) incommingMessage += (char)payload[i];
 
   if (strcmp(topic, "eregulation/arduino") == 0) {
-    Serial.println("Message recieved [" + String(topic) + "]: " + incommingMessage);
+    Serial.println("Message received [" + String(topic) + "]: " + incommingMessage);
   }
 
   if (strcmp(topic, "eregulation/arduino") == 0 || strcmp(topic, "eregulation/web") == 0) {
