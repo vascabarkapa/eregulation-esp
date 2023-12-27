@@ -43,8 +43,8 @@ This project implements an IoT device using the ESP8266 microcontroller to regul
 - `t-off`: Disable temperature regulation.
 - `h-on`: Enable humidity regulation.
 - `h-off`: Disable humidity regulation.
-- `tnn-mm`: Set temperature range (nn: minimum, mm: maximum).
-- `hnn-mm`: Set humidity range (nn: minimum, mm: maximum).
+- `t-nn-mm`: Set temperature range (nn: minimum, mm: maximum).
+- `h-nn-mm`: Set humidity range (nn: minimum, mm: maximum).
 - `l-on`: Turn on the light.
 - `l-off`: Turn off the light.
 - `l-auto`: Set light mode to auto.
